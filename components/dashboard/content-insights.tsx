@@ -8,23 +8,23 @@ import { TrendingUp, Users, Heart, MessageCircle, Share2, Eye, Calendar, Clock, 
 export function ContentInsights() {
   const insights = [
     {
-      title: "أفضل وقت للنشر",
-      value: "9:00 ص - 11:00 ص",
-      description: "أعلى معدل تفاعل",
+      title: "Best Time to Post",
+      value: "9:00 AM - 11:00 AM",
+      description: "Highest engagement rate",
       icon: Clock,
       color: "text-blue-600",
     },
     {
-      title: "أفضل يوم للنشر",
-      value: "الثلاثاء",
-      description: "زيادة 35% في الوصول",
+      title: "Best Day to Post",
+      value: "Tuesday",
+      description: "35% increase in reach",
       icon: Calendar,
       color: "text-green-600",
     },
     {
-      title: "نوع المحتوى الأفضل",
-      value: "الفيديوهات القصيرة",
-      description: "معدل تفاعل 18.5%",
+      title: "Best Content Type",
+      value: "Short Videos",
+      description: "18.5% engagement rate",
       icon: Zap,
       color: "text-purple-600",
     },
@@ -38,13 +38,13 @@ export function ContentInsights() {
   ]
 
   const weeklyStats = [
-    { day: "الأحد", posts: 3, engagement: 85 },
-    { day: "الاثنين", posts: 2, engagement: 92 },
-    { day: "الثلاثاء", posts: 4, engagement: 78 },
-    { day: "الأربعاء", posts: 3, engagement: 88 },
-    { day: "الخميس", posts: 2, engagement: 95 },
-    { day: "الجمعة", posts: 1, engagement: 72 },
-    { day: "السبت", posts: 2, engagement: 80 },
+    { day: "Sunday", posts: 3, engagement: 85 },
+    { day: "Monday", posts: 2, engagement: 92 },
+    { day: "Tuesday", posts: 4, engagement: 78 },
+    { day: "Wednesday", posts: 3, engagement: 88 },
+    { day: "Thursday", posts: 2, engagement: 95 },
+    { day: "Friday", posts: 1, engagement: 72 },
+    { day: "Saturday", posts: 2, engagement: 80 },
   ]
 
   return (
@@ -54,7 +54,7 @@ export function ContentInsights() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <TrendingUp className="h-5 w-5 text-blue-600" />
-            نظرة عامة على الأداء
+            Performance Overview
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -63,28 +63,28 @@ export function ContentInsights() {
               <div className="text-2xl font-bold text-blue-600">2.4K</div>
               <div className="text-xs text-gray-600 flex items-center justify-center gap-1">
                 <Eye className="h-3 w-3" />
-                مشاهدات اليوم
+                Views Today
               </div>
             </div>
             <div className="text-center p-3 bg-white rounded-lg shadow-sm">
               <div className="text-2xl font-bold text-green-600">186</div>
               <div className="text-xs text-gray-600 flex items-center justify-center gap-1">
                 <Heart className="h-3 w-3" />
-                إعجابات جديدة
+                New Likes
               </div>
             </div>
             <div className="text-center p-3 bg-white rounded-lg shadow-sm">
               <div className="text-2xl font-bold text-purple-600">42</div>
               <div className="text-xs text-gray-600 flex items-center justify-center gap-1">
                 <MessageCircle className="h-3 w-3" />
-                تعليقات
+                Comments
               </div>
             </div>
             <div className="text-center p-3 bg-white rounded-lg shadow-sm">
               <div className="text-2xl font-bold text-orange-600">28</div>
               <div className="text-xs text-gray-600 flex items-center justify-center gap-1">
                 <Share2 className="h-3 w-3" />
-                مشاركات
+                Shares
               </div>
             </div>
           </div>
@@ -96,7 +96,7 @@ export function ContentInsights() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Target className="h-5 w-5 text-green-600" />
-            رؤى المحتوى
+            Content Insights
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -123,7 +123,7 @@ export function ContentInsights() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Users className="h-5 w-5 text-purple-600" />
-            أداء المنصات
+            Platform Performance
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -147,7 +147,7 @@ export function ContentInsights() {
       {/* Weekly Activity */}
       <Card className="border-0 shadow-lg">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">النشاط الأسبوعي</CardTitle>
+          <CardTitle className="text-lg">Weekly Activity</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -155,7 +155,7 @@ export function ContentInsights() {
               <div key={index} className="flex items-center justify-between">
                 <span className="text-sm font-medium">{day.day}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-600">{day.posts} منشور</span>
+                  <span className="text-xs text-gray-600">{day.posts} posts</span>
                   <div className="w-16">
                     <Progress value={day.engagement} className="h-2" />
                   </div>
