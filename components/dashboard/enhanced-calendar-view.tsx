@@ -1,278 +1,403 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react"
 import { Calendar } from "@/components/ui/calendar"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { PostTemplates } from "./post-templates"
 import { ContentInsights } from "./content-insights"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { QuickActions } from "./quick-actions"
 import {
-  CalendarDays,
-  Plus,
-  BarChart3,
-  LayoutTemplateIcon as Template,
-  Clock,
-  CheckCircle,
-  FileText,
+  Facebook,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Youtube,
   Video,
-  ImageIcon as Image,
-  Zap,
+  ImageIcon,
+  FileText,
+  Clock,
+  CalendarIcon,
 } from "lucide-react"
+import { format } from "date-fns"
 
-interface ScheduledPost {
+interface Post {
   id: string
-  title: string
+  content: string
+  scheduled_at: string | null
+  status: string
+  type: "text" | "image" | "video" | "reel" | "story"
   platform: string
-  type: "text" | "image" | "video" | "reel"
-  scheduledFor: Date
-  status: "scheduled" | "published" | "draft"
+  engagement?: {
+    likes: number
+    comments: number
+    shares: number
+  }
 }
 
-const mockPosts: ScheduledPost[] = [
+// Mock data for demonstration
+const mockPosts: Post[] = [
   {
     id: "1",
-    title: "Morning motivation post",
-    platform: "Instagram",
-    type: "text",
-    scheduledFor: new Date(2024, 0, 15, 9, 0),
+    content: "Tips for improving workplace productivity 💼✨",
+    scheduled_at: new Date().toISOString(),
     status: "scheduled",
+    type: "image",
+    platform: "linkedin",
+    engagement: { likes: 45, comments: 12, shares: 8 },
   },
   {
     id: "2",
-    title: "Product showcase video",
-    platform: "Facebook",
-    type: "video",
-    scheduledFor: new Date(2024, 0, 15, 14, 30),
+    content: "Tutorial video: How to use AI in your workflow",
+    scheduled_at: new Date(Date.now() + 86400000).toISOString(),
     status: "scheduled",
+    type: "video",
+    platform: "youtube",
   },
   {
     id: "3",
-    title: "Educational reel",
-    platform: "Instagram",
+    content: "New Reel: Best practices in digital marketing",
+    scheduled_at: new Date(Date.now() + 172800000).toISOString(),
+    status: "scheduled",
     type: "reel",
-    scheduledFor: new Date(2024, 0, 16, 11, 0),
+    platform: "instagram",
+  },
+  {
+    id: "4",
+    content: "Quick update about our new project 🚀",
+    scheduled_at: new Date(Date.now() + 259200000).toISOString(),
     status: "draft",
+    type: "text",
+    platform: "twitter",
   },
 ]
 
+const getPlatformIcon = (platform: string) => {
+  const iconClass = "h-4 w-4"
+  switch (platform) {
+    case "instagram":
+      return <Instagram className={iconClass} />
+    case "facebook":
+      return <Facebook className={iconClass} />
+    case "twitter":
+      return <Twitter className={iconClass} />
+    case "linkedin":
+      return <Linkedin className={iconClass} />
+    case "youtube":
+      return <Youtube className={iconClass} />
+    default:
+      return <FileText className={iconClass} />
+  }
+}
+
+const getTypeIcon = (type: string) => {
+  const iconClass = "h-4 w-4"
+  switch (type) {
+    case "video":
+      return <Video className={iconClass} />
+    case "reel":
+      return <Video className={iconClass} />
+    case "image":
+      return <ImageIcon className={iconClass} />
+    default:
+      return <FileText className={iconClass} />
+  }
+}
+
+const getPlatformColor = (platform: string) => {
+  switch (platform) {
+    case "instagram":
+      return "bg-gradient-to-r from-purple-500 to-pink-500"
+    case "facebook":
+      return "bg-blue-600"
+    case "twitter":
+      return "bg-sky-500"
+    case "linkedin":
+      return "bg-blue-700"
+    case "youtube":
+      return "bg-red-600"
+    default:
+      return "bg-gray-500"
+  }
+}
+
 export function EnhancedCalendarView() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [activeTab, setActiveTab] = useState("calendar")
+  const [posts, setPosts] = useState<Post[]>([])
+  const [date, setDate] = useState<Date | undefined>(undefined)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const getPostsForDate = (date: Date) => {
-    return mockPosts.filter(
-      (post) =>
-        post.scheduledFor.getDate() === date.getDate() &&
-        post.scheduledFor.getMonth() === date.getMonth() &&
-        post.scheduledFor.getFullYear() === date.getFullYear(),
-    )
-  }
+  useEffect(() => {
+    // Simulate loading and set mock data
+    const timer = setTimeout(() => {
+      setPosts(mockPosts)
+      setDate(new Date())
+      setIsLoading(false)
+    }, 100)
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "scheduled":
-        return "bg-blue-100 text-blue-800"
-      case "published":
-        return "bg-green-100 text-green-800"
-      case "draft":
-        return "bg-gray-100 text-gray-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Filter posts for the selected date
+  const postsForSelectedDate = posts.filter((post) => {
+    if (!date || !post.scheduled_at) return false
+    try {
+      const postDate = new Date(post.scheduled_at)
+      if (isNaN(postDate.getTime())) return false
+
+      return (
+        postDate.getDate() === date.getDate() &&
+        postDate.getMonth() === date.getMonth() &&
+        postDate.getFullYear() === date.getFullYear()
+      )
+    } catch (error) {
+      console.error("Error parsing date:", error)
+      return false
     }
+  })
+
+  // Function to check if a date has posts
+  const hasPostsOnDate = (checkDate: Date) => {
+    if (!checkDate) return false
+
+    return posts.some((post) => {
+      if (!post.scheduled_at) return false
+      try {
+        const postDate = new Date(post.scheduled_at)
+        if (isNaN(postDate.getTime())) return false
+
+        return (
+          postDate.getDate() === checkDate.getDate() &&
+          postDate.getMonth() === checkDate.getMonth() &&
+          postDate.getFullYear() === checkDate.getFullYear()
+        )
+      } catch (error) {
+        console.error("Error checking date:", error)
+        return false
+      }
+    })
   }
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "text":
-        return FileText
-      case "image":
-        return Image
-      case "video":
-        return Video
-      case "reel":
-        return Zap
-      default:
-        return FileText
-    }
+  const getPostCountForDate = (checkDate: Date) => {
+    if (!checkDate) return 0
+
+    return posts.filter((post) => {
+      if (!post.scheduled_at) return false
+      try {
+        const postDate = new Date(post.scheduled_at)
+        if (isNaN(postDate.getTime())) return false
+
+        return (
+          postDate.getDate() === checkDate.getDate() &&
+          postDate.getMonth() === checkDate.getMonth() &&
+          postDate.getFullYear() === checkDate.getFullYear()
+        )
+      } catch (error) {
+        console.error("Error counting posts:", error)
+        return false
+      }
+    }).length
   }
 
-  const totalScheduled = mockPosts.filter((p) => p.status === "scheduled").length
-  const totalPublished = mockPosts.filter((p) => p.status === "published").length
-  const totalDrafts = mockPosts.filter((p) => p.status === "draft").length
-
-  return (
-    <div className="space-y-6">
-      {/* Header Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Clock className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-600">{totalScheduled}</div>
-                <div className="text-sm text-gray-600">Scheduled</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">{totalPublished}</div>
-                <div className="text-sm text-gray-600">Published</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <FileText className="h-5 w-5 text-gray-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-600">{totalDrafts}</div>
-                <div className="text-sm text-gray-600">Drafts</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <BarChart3 className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-purple-600">8.5%</div>
-                <div className="text-sm text-gray-600">Avg Engagement</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="calendar" className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4" />
-            Calendar
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <Template className="h-4 w-4" />
-            Templates
-          </TabsTrigger>
-          <TabsTrigger value="insights" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Insights
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="calendar" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Calendar */}
-            <Card className="lg:col-span-2 border-0 shadow-lg">
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-6 lg:grid-cols-4">
+          <div className="lg:col-span-3 space-y-6">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5" />
-                  Content Calendar
-                </CardTitle>
+                <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
               </CardHeader>
               <CardContent>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="rounded-md border-0"
-                  components={{
-                    Day: ({ date, ...props }) => {
-                      const postsForDay = getPostsForDate(date)
-                      return (
-                        <div className="relative">
-                          <button {...props} className="w-full h-full">
-                            {date.getDate()}
-                            {postsForDay.length > 0 && (
-                              <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                {postsForDay.length}
-                              </div>
-                            )}
-                          </button>
-                        </div>
-                      )
-                    },
-                  }}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Selected Date Posts */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  {selectedDate ? selectedDate.toLocaleDateString() : "Select a date"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {selectedDate ? (
-                  getPostsForDate(selectedDate).length > 0 ? (
-                    getPostsForDate(selectedDate).map((post) => {
-                      const TypeIcon = getTypeIcon(post.type)
-                      return (
-                        <div key={post.id} className="p-3 bg-gray-50 rounded-lg space-y-2">
-                          <div className="flex items-center gap-2">
-                            <TypeIcon className="h-4 w-4 text-gray-600" />
-                            <span className="font-medium text-sm">{post.title}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-600">{post.platform}</span>
-                            <Badge className={`text-xs ${getStatusColor(post.status)}`}>{post.status}</Badge>
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {post.scheduledFor.toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </div>
-                        </div>
-                      )
-                    })
-                  ) : (
-                    <div className="text-center py-8">
-                      <div className="text-gray-400 mb-2">No posts scheduled</div>
-                      <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Schedule Post
-                      </Button>
-                    </div>
-                  )
-                ) : (
-                  <div className="text-center py-8 text-gray-400">Select a date to view posts</div>
-                )}
+                <div className="h-64 bg-gray-100 rounded animate-pulse"></div>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
+                  <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
+                  <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-        <TabsContent value="templates">
+  return (
+    <div className="space-y-6">
+      {/* Quick Actions */}
+      <QuickActions />
+
+      {/* Main Content */}
+      <div className="grid gap-6 lg:grid-cols-4">
+        {/* Calendar and Templates - 3 columns */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Calendar Section */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                Interactive Calendar
+              </CardTitle>
+              <CardDescription>View and manage all your scheduled posts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Calendar */}
+                <div className="space-y-4">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    className="rounded-xl border shadow-sm"
+                    modifiers={{
+                      booked: (checkDate) => hasPostsOnDate(checkDate),
+                    }}
+                    modifiersStyles={{
+                      booked: {
+                        fontWeight: "bold",
+                        backgroundColor: "hsl(var(--primary) / 0.1)",
+                        color: "hsl(var(--primary))",
+                      },
+                    }}
+                    components={{
+                      DayContent: ({ date: dayDate }) => {
+                        if (!dayDate) return <span>-</span>
+
+                        return (
+                          <div className="relative w-full h-full flex items-center justify-center">
+                            <span>{dayDate.getDate()}</span>
+                            {hasPostsOnDate(dayDate) && (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                                <span className="text-xs text-white font-bold">{getPostCountForDate(dayDate)}</span>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      },
+                    }}
+                  />
+
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <Card className="p-3 text-center border-0 bg-blue-50">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {posts.filter((p) => p.status === "scheduled").length}
+                      </div>
+                      <div className="text-xs text-blue-600">Scheduled</div>
+                    </Card>
+                    <Card className="p-3 text-center border-0 bg-green-50">
+                      <div className="text-2xl font-bold text-green-600">
+                        {posts.filter((p) => p.status === "published").length}
+                      </div>
+                      <div className="text-xs text-green-600">Published</div>
+                    </Card>
+                    <Card className="p-3 text-center border-0 bg-orange-50">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {posts.filter((p) => p.status === "draft").length}
+                      </div>
+                      <div className="text-xs text-orange-600">Drafts</div>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Posts for Selected Date */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-lg">
+                      {date ? format(date, "EEEE, MMMM d, yyyy") : "Select a date"}
+                    </h3>
+                    {postsForSelectedDate.length > 0 && (
+                      <Badge variant="secondary" className="bg-primary/10 text-primary">
+                        {postsForSelectedDate.length} post{postsForSelectedDate.length !== 1 ? "s" : ""}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {postsForSelectedDate.length > 0 ? (
+                      postsForSelectedDate.map((post) => (
+                        <Card key={post.id} className="border-0 shadow-sm hover:shadow-md transition-all duration-200">
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              {/* Platform & Type Icons */}
+                              <div className="flex flex-col gap-1">
+                                <div className={`p-2 rounded-lg text-white ${getPlatformColor(post.platform)}`}>
+                                  {getPlatformIcon(post.platform)}
+                                </div>
+                                <div className="p-1 rounded bg-gray-100 text-gray-600">{getTypeIcon(post.type)}</div>
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge
+                                    variant={post.status === "scheduled" ? "default" : "secondary"}
+                                    className="text-xs"
+                                  >
+                                    {post.status}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-xs capitalize">
+                                    {post.type}
+                                  </Badge>
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
+                                    <Clock className="h-3 w-3" />
+                                    {post.scheduled_at && format(new Date(post.scheduled_at), "HH:mm")}
+                                  </div>
+                                </div>
+
+                                <p className="text-sm text-gray-700 line-clamp-2 mb-2">{post.content}</p>
+
+                                {/* Engagement Stats */}
+                                {post.engagement && (
+                                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                    <span>👍 {post.engagement.likes}</span>
+                                    <span>💬 {post.engagement.comments}</span>
+                                    <span>🔄 {post.engagement.shares}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <Card className="border-2 border-dashed border-gray-200 bg-gray-50/50">
+                        <CardContent className="p-8 text-center">
+                          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                            <Clock className="h-8 w-8 text-gray-400" />
+                          </div>
+                          <h3 className="font-medium text-gray-900 mb-2">No posts scheduled for this date</h3>
+                          <p className="text-sm text-gray-500 mb-4">Start by creating a new post for this day</p>
+                          <Button size="sm">Create Post</Button>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Templates Section */}
           <PostTemplates />
-        </TabsContent>
+        </div>
 
-        <TabsContent value="insights">
+        {/* Sidebar - 1 column */}
+        <div className="space-y-6">
           <ContentInsights />
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,3 +1,5 @@
+"use client"
+
 import { EnhancedCalendarView } from "@/components/dashboard/enhanced-calendar-view"
 
 export default function CalendarPage() {
