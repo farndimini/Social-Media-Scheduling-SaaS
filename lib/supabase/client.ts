@@ -1,24 +1,31 @@
-// Simple mock authentication system
+// بيانات المستخدمين التجريبية
 const MOCK_USERS = [
   {
     id: "user-1",
     email: "admin@postscheduler.com",
     password: "admin123",
-    user_metadata: { name: "Admin User" },
+    user_metadata: { name: "مدير النظام" },
     created_at: new Date().toISOString(),
   },
   {
     id: "user-2",
     email: "demo@postscheduler.com",
     password: "demo123",
-    user_metadata: { name: "Demo User" },
+    user_metadata: { name: "حساب تجريبي" },
     created_at: new Date().toISOString(),
   },
   {
     id: "user-3",
     email: "test@postscheduler.com",
     password: "test123",
-    user_metadata: { name: "Test User" },
+    user_metadata: { name: "حساب اختبار" },
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "user-4",
+    email: "user@example.com",
+    password: "password",
+    user_metadata: { name: "مستخدم عادي" },
     created_at: new Date().toISOString(),
   },
 ]
@@ -39,23 +46,77 @@ interface MockSession {
   expires_at: number
 }
 
+// Mock query builder that supports all the chaining methods
+class MockQueryBuilder {
+  private table: string
+  private selectColumns = "*"
+  private filters: any[] = []
+  private orderBy: { column: string; ascending: boolean } | null = null
+  private limitCount: number | null = null
+
+  constructor(table: string) {
+    this.table = table
+  }
+
+  select(columns = "*") {
+    this.selectColumns = columns
+    return this
+  }
+
+  eq(column: string, value: any) {
+    this.filters.push({ type: "eq", column, value })
+    return this
+  }
+
+  in(column: string, values: any[]) {
+    this.filters.push({ type: "in", column, values })
+    return this
+  }
+
+  order(column: string, options: { ascending?: boolean } = {}) {
+    this.orderBy = { column, ascending: options.ascending !== false }
+    return this
+  }
+
+  limit(count: number) {
+    this.limitCount = count
+    return this
+  }
+
+  async single() {
+    return { data: null, error: null }
+  }
+
+  then(resolve: (value: any) => void, reject?: (reason?: any) => void) {
+    const result = { data: [], error: null }
+    return Promise.resolve(result).then(resolve, reject)
+  }
+}
+
 class MockSupabaseClient {
   private listeners: Array<(event: string, session: MockSession | null) => void> = []
 
   auth = {
     signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
-      console.log("Attempting login with:", email)
+      console.log("🔐 محاولة تسجيل الدخول بالإيميل:", email)
+      console.log("🔐 كلمة المرور المدخلة:", password)
 
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      // تأخير بسيط لمحاكاة الشبكة
+      await new Promise((resolve) => setTimeout(resolve, 500))
 
-      const user = MOCK_USERS.find((u) => u.email === email && u.password === password)
+      // البحث عن المستخدم
+      const user = MOCK_USERS.find((u) => {
+        console.log(`🔍 مقارنة: ${u.email} === ${email} && ${u.password} === ${password}`)
+        return u.email.toLowerCase() === email.toLowerCase() && u.password === password
+      })
 
       if (!user) {
-        console.log("Login failed: Invalid credentials")
+        console.log("❌ فشل تسجيل الدخول: بيانات غير صحيحة")
+        console.log("📋 المستخدمون المتاحون:")
+        MOCK_USERS.forEach((u) => console.log(`   - ${u.email} : ${u.password}`))
         return {
           data: { user: null, session: null },
-          error: { message: "Invalid email or password" },
+          error: { message: "الإيميل أو كلمة المرور غير صحيحة" },
         }
       }
 
@@ -68,19 +129,19 @@ class MockSupabaseClient {
         },
         access_token: `mock-token-${user.id}`,
         refresh_token: `mock-refresh-${user.id}`,
-        expires_at: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+        expires_at: Date.now() + 24 * 60 * 60 * 1000, // 24 ساعة
       }
 
-      // Store session
+      // حفظ الجلسة
       if (typeof window !== "undefined") {
         localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-        console.log("Session stored successfully")
+        console.log("✅ تم حفظ الجلسة بنجاح")
       }
 
-      // Notify listeners
+      // إشعار المستمعين
       this.listeners.forEach((listener) => listener("SIGNED_IN", session))
 
-      console.log("Login successful for:", user.email)
+      console.log("✅ تم تسجيل الدخول بنجاح للمستخدم:", user.email)
       return {
         data: { user: session.user, session },
         error: null,
@@ -88,13 +149,13 @@ class MockSupabaseClient {
     },
 
     signUp: async ({ email, password }: { email: string; password: string }) => {
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      await new Promise((resolve) => setTimeout(resolve, 500))
 
-      const existingUser = MOCK_USERS.find((u) => u.email === email)
+      const existingUser = MOCK_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase())
       if (existingUser) {
         return {
           data: { user: null, session: null },
-          error: { message: "User already exists" },
+          error: { message: "المستخدم موجود بالفعل" },
         }
       }
 
@@ -139,6 +200,7 @@ class MockSupabaseClient {
 
       const storedSession = localStorage.getItem(SESSION_KEY)
       if (!storedSession) {
+        console.log("❌ لا توجد جلسة محفوظة")
         return { data: { session: null }, error: null }
       }
 
@@ -147,12 +209,15 @@ class MockSupabaseClient {
 
         if (Date.now() > session.expires_at) {
           localStorage.removeItem(SESSION_KEY)
+          console.log("❌ انتهت صلاحية الجلسة")
           return { data: { session: null }, error: null }
         }
 
+        console.log("✅ تم العثور على جلسة صالحة")
         return { data: { session }, error: null }
       } catch {
         localStorage.removeItem(SESSION_KEY)
+        console.log("❌ خطأ في قراءة الجلسة")
         return { data: { session: null }, error: null }
       }
     },
@@ -160,7 +225,7 @@ class MockSupabaseClient {
     signOut: async () => {
       if (typeof window !== "undefined") {
         localStorage.removeItem(SESSION_KEY)
-        console.log("User signed out")
+        console.log("✅ تم تسجيل الخروج")
       }
 
       this.listeners.forEach((listener) => listener("SIGNED_OUT", null))
@@ -185,21 +250,9 @@ class MockSupabaseClient {
     },
   }
 
-  // Mock database methods
-  from = () => ({
-    select: () => ({
-      eq: () => ({
-        single: () => Promise.resolve({ data: null, error: null }),
-      }),
-    }),
-    insert: () => Promise.resolve({ data: null, error: null }),
-    update: () => ({
-      eq: () => Promise.resolve({ data: null, error: null }),
-    }),
-    delete: () => ({
-      eq: () => Promise.resolve({ data: null, error: null }),
-    }),
-  })
+  from(table: string) {
+    return new MockQueryBuilder(table)
+  }
 }
 
 let mockClient: MockSupabaseClient | null = null

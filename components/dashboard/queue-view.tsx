@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Facebook, Instagram, Twitter, MoreHorizontal, Calendar, Clock } from "lucide-react"
+import { Facebook, Instagram, Twitter, MoreHorizontal, Calendar, Clock, Linkedin, Youtube } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -36,6 +36,10 @@ const getPlatformIcon = (platform: string) => {
       return <Facebook className="h-4 w-4" />
     case "twitter":
       return <Twitter className="h-4 w-4" />
+    case "linkedin":
+      return <Linkedin className="h-4 w-4" />
+    case "youtube":
+      return <Youtube className="h-4 w-4" />
     default:
       return null
   }
@@ -51,7 +55,8 @@ export function QueueView({ initialPosts }: QueueViewProps) {
 
   const handleDeletePost = async (postId: string) => {
     try {
-      await supabase.from("posts").delete().eq("id", postId)
+      // In a real app, this would delete from the database
+      // await supabase.from("posts").delete().eq("id", postId)
       setPosts(posts.filter((post) => post.id !== postId))
     } catch (error) {
       console.error("Error deleting post:", error)
@@ -112,9 +117,11 @@ export function QueueView({ initialPosts }: QueueViewProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => router.push(`/edit-post/${post.id}`)}>Edit</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => router.push(`/create-post?edit=${post.id}`)}>Edit</DropdownMenuItem>
           {post.status === "draft" && (
-            <DropdownMenuItem onClick={() => router.push(`/schedule-post/${post.id}`)}>Schedule</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push(`/create-post?schedule=${post.id}`)}>
+              Schedule
+            </DropdownMenuItem>
           )}
           <DropdownMenuItem onClick={() => handleDeletePost(post.id)} className="text-destructive">
             Delete
