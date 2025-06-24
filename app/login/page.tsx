@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Share2 } from "lucide-react"
+import { Share2, Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +20,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -28,7 +29,6 @@ export default function LoginPage() {
     setError(null)
     setIsLoading(true)
 
-    // Basic validation
     if (!email || !password) {
       setError("Email and password are required")
       setIsLoading(false)
@@ -43,116 +43,154 @@ export default function LoginPage() {
       })
 
       if (signInError) {
-        setError(signInError.message || "Invalid email or password")
+        setError(signInError.message)
         setIsLoading(false)
         return
       }
 
       if (data?.user) {
-        router.push(redirectPath)
-        router.refresh()
+        // Small delay to ensure session is stored
+        setTimeout(() => {
+          router.push(redirectPath)
+          router.refresh()
+        }, 100)
       } else {
-        setError("Something went wrong. Please try again.")
+        setError("Login failed. Please try again.")
       }
     } catch (err) {
-      console.error("Unexpected error during login:", err)
-      setError("An unexpected error occurred. Please try again later.")
+      console.error("Login error:", err)
+      setError("An unexpected error occurred.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const fillCredentials = (email: string, password: string) => {
+  const quickLogin = (email: string, password: string) => {
     setEmail(email)
     setPassword(password)
+    setError(null)
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-        <div className="mx-auto w-full max-w-md space-y-6">
-          <div className="space-y-2 text-center">
-            <div className="flex justify-center">
-              <div className="flex items-center gap-2 font-bold">
-                <Share2 className="h-6 w-6" />
-                <span className="text-2xl">PostScheduler</span>
-              </div>
-            </div>
-            <h1 className="text-3xl font-bold">Welcome back</h1>
-            <p className="text-muted-foreground">Enter your credentials to sign in</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <div className="flex justify-center items-center gap-2 mb-4">
+            <Share2 className="h-8 w-8 text-blue-600" />
+            <span className="text-2xl font-bold text-gray-900">PostScheduler</span>
           </div>
+          <h2 className="text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
+          <p className="mt-2 text-sm text-gray-600">Use one of the demo accounts below to get started</p>
+        </div>
 
-          {/* Demo credentials info */}
-          <div className="rounded-lg bg-blue-50 p-4 text-sm space-y-3">
-            <p className="font-medium text-blue-900 mb-2">Available Demo Accounts:</p>
+        {/* Demo Accounts */}
+        <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+          <h3 className="font-medium text-blue-900 text-sm">Demo Accounts - Click to use:</h3>
 
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => fillCredentials("farndimini@gmail.com", "pass;0600231590m")}
-                className="w-full text-left p-2 rounded bg-blue-100 hover:bg-blue-200 transition-colors"
-              >
-                <p className="text-blue-700 font-medium">Your Account</p>
-                <p className="text-blue-600 text-xs">farndimini@gmail.com</p>
-              </button>
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => quickLogin("admin@postscheduler.com", "admin123")}
+              className="w-full text-left p-3 bg-white rounded-md border border-blue-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            >
+              <div className="font-medium text-blue-900">Admin Account</div>
+              <div className="text-sm text-blue-600">admin@postscheduler.com</div>
+              <div className="text-xs text-blue-500">Password: admin123</div>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => fillCredentials("demo@example.com", "password123")}
-                className="w-full text-left p-2 rounded bg-blue-100 hover:bg-blue-200 transition-colors"
-              >
-                <p className="text-blue-700 font-medium">Demo Account</p>
-                <p className="text-blue-600 text-xs">demo@example.com</p>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => quickLogin("demo@postscheduler.com", "demo123")}
+              className="w-full text-left p-3 bg-white rounded-md border border-blue-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            >
+              <div className="font-medium text-blue-900">Demo Account</div>
+              <div className="text-sm text-blue-600">demo@postscheduler.com</div>
+              <div className="text-xs text-blue-500">Password: demo123</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => quickLogin("test@postscheduler.com", "test123")}
+              className="w-full text-left p-3 bg-white rounded-md border border-blue-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            >
+              <div className="font-medium text-blue-900">Test Account</div>
+              <div className="text-sm text-blue-600">test@postscheduler.com</div>
+              <div className="text-xs text-blue-500">Password: test123</div>
+            </button>
           </div>
+        </div>
 
+        {/* Login Form */}
+        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email address</Label>
               <Input
                 id="email"
-                placeholder="farndimini@gmail.com"
-                required
+                name="email"
                 type="email"
+                autoComplete="email"
+                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
                 disabled={isLoading}
+                className="mt-1"
               />
             </div>
-            <div className="space-y-2">
+
+            <div>
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                placeholder="Enter your password"
-                required
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
+              <div className="relative mt-1">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  disabled={isLoading}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-400" />
+                  )}
+                </button>
+              </div>
             </div>
-            <div className="flex items-center justify-end">
-              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-            <Button className="w-full" type="submit" disabled={isLoading}>
+          </div>
+
+          <div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
-            <div className="text-center text-sm">
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
               Don't have an account?{" "}
-              <Link href="/signup" className="text-primary hover:underline">
+              <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
                 Sign up
               </Link>
-            </div>
-          </form>
-        </div>
+            </p>
+          </div>
+        </form>
       </div>
     </div>
   )

@@ -1,33 +1,29 @@
-import type { createClient as createSupabaseClient } from "@supabase/supabase-js"
-import type { Database } from "@/types/supabase"
-
-// Mock user data for demonstration
+// Simple mock authentication system
 const MOCK_USERS = [
   {
     id: "user-1",
-    email: "demo@example.com",
-    password: "password123",
-    user_metadata: { name: "Demo User" },
+    email: "admin@postscheduler.com",
+    password: "admin123",
+    user_metadata: { name: "Admin User" },
     created_at: new Date().toISOString(),
   },
   {
     id: "user-2",
-    email: "test@example.com",
-    password: "test123",
-    user_metadata: { name: "Test User" },
+    email: "demo@postscheduler.com",
+    password: "demo123",
+    user_metadata: { name: "Demo User" },
     created_at: new Date().toISOString(),
   },
   {
     id: "user-3",
-    email: "farndimini@gmail.com",
-    password: "pass;0600231590m",
-    user_metadata: { name: "Farndimini" },
+    email: "test@postscheduler.com",
+    password: "test123",
+    user_metadata: { name: "Test User" },
     created_at: new Date().toISOString(),
   },
 ]
 
-// Mock session storage
-const SESSION_KEY = "supabase-mock-session"
+const SESSION_KEY = "postscheduler-session"
 
 interface MockUser {
   id: string
@@ -48,15 +44,18 @@ class MockSupabaseClient {
 
   auth = {
     signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
+      console.log("Attempting login with:", email)
+
       // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise((resolve) => setTimeout(resolve, 300))
 
       const user = MOCK_USERS.find((u) => u.email === email && u.password === password)
 
       if (!user) {
+        console.log("Login failed: Invalid credentials")
         return {
           data: { user: null, session: null },
-          error: { message: "Invalid login credentials" },
+          error: { message: "Invalid email or password" },
         }
       }
 
@@ -69,17 +68,19 @@ class MockSupabaseClient {
         },
         access_token: `mock-token-${user.id}`,
         refresh_token: `mock-refresh-${user.id}`,
-        expires_at: Date.now() + 3600000, // 1 hour
+        expires_at: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
       }
 
-      // Store session in localStorage
+      // Store session
       if (typeof window !== "undefined") {
         localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+        console.log("Session stored successfully")
       }
 
       // Notify listeners
       this.listeners.forEach((listener) => listener("SIGNED_IN", session))
 
+      console.log("Login successful for:", user.email)
       return {
         data: { user: session.user, session },
         error: null,
@@ -87,19 +88,16 @@ class MockSupabaseClient {
     },
 
     signUp: async ({ email, password }: { email: string; password: string }) => {
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise((resolve) => setTimeout(resolve, 300))
 
-      // Check if user already exists
       const existingUser = MOCK_USERS.find((u) => u.email === email)
       if (existingUser) {
         return {
           data: { user: null, session: null },
-          error: { message: "User already registered" },
+          error: { message: "User already exists" },
         }
       }
 
-      // Create new user
       const newUser = {
         id: `user-${Date.now()}`,
         email,
@@ -108,7 +106,6 @@ class MockSupabaseClient {
         created_at: new Date().toISOString(),
       }
 
-      // Add to mock users (in real app, this would be saved to database)
       MOCK_USERS.push(newUser)
 
       const session: MockSession = {
@@ -120,15 +117,13 @@ class MockSupabaseClient {
         },
         access_token: `mock-token-${newUser.id}`,
         refresh_token: `mock-refresh-${newUser.id}`,
-        expires_at: Date.now() + 3600000, // 1 hour
+        expires_at: Date.now() + 24 * 60 * 60 * 1000,
       }
 
-      // Store session in localStorage
       if (typeof window !== "undefined") {
         localStorage.setItem(SESSION_KEY, JSON.stringify(session))
       }
 
-      // Notify listeners
       this.listeners.forEach((listener) => listener("SIGNED_UP", session))
 
       return {
@@ -150,7 +145,6 @@ class MockSupabaseClient {
       try {
         const session: MockSession = JSON.parse(storedSession)
 
-        // Check if session is expired
         if (Date.now() > session.expires_at) {
           localStorage.removeItem(SESSION_KEY)
           return { data: { session: null }, error: null }
@@ -166,18 +160,16 @@ class MockSupabaseClient {
     signOut: async () => {
       if (typeof window !== "undefined") {
         localStorage.removeItem(SESSION_KEY)
+        console.log("User signed out")
       }
 
-      // Notify listeners
       this.listeners.forEach((listener) => listener("SIGNED_OUT", null))
-
       return { error: null }
     },
 
     onAuthStateChange: (callback: (event: string, session: MockSession | null) => void) => {
       this.listeners.push(callback)
 
-      // Return subscription object
       return {
         data: {
           subscription: {
@@ -193,47 +185,28 @@ class MockSupabaseClient {
     },
   }
 
-  from = (table: string) => ({
-    select: (columns?: string) => ({
-      eq: (column: string, value: any) => ({
+  // Mock database methods
+  from = () => ({
+    select: () => ({
+      eq: () => ({
         single: () => Promise.resolve({ data: null, error: null }),
-        order: (column: string, options?: any) => ({
-          limit: (count: number) => Promise.resolve({ data: [], error: null }),
-        }),
-      }),
-      order: (column: string, options?: any) => ({
-        limit: (count: number) => Promise.resolve({ data: [], error: null }),
       }),
     }),
-    insert: (data: any) => Promise.resolve({ data: null, error: null }),
-    update: (data: any) => ({
-      eq: (column: string, value: any) => Promise.resolve({ data: null, error: null }),
+    insert: () => Promise.resolve({ data: null, error: null }),
+    update: () => ({
+      eq: () => Promise.resolve({ data: null, error: null }),
     }),
     delete: () => ({
-      eq: (column: string, value: any) => Promise.resolve({ data: null, error: null }),
+      eq: () => Promise.resolve({ data: null, error: null }),
     }),
   })
 }
 
 let mockClient: MockSupabaseClient | null = null
 
-// Create a single instance of the supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-// Create a singleton client
-const supabaseClient: ReturnType<typeof createSupabaseClient<Database>> | null = null
-
 export function createClient() {
-  if (typeof window === "undefined") {
-    // Server-side: Return a minimal mock for SSR
-    return new MockSupabaseClient()
-  }
-
-  // Client-side: Create or return the singleton
   if (!mockClient) {
     mockClient = new MockSupabaseClient()
   }
-
   return mockClient
 }
