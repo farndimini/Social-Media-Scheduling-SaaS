@@ -5,13 +5,29 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, BarChart3, Settings, ImageIcon, CreditCard, Share2, Menu, Home, Clock, LinkIcon } from "lucide-react"
+import {
+  Calendar,
+  BarChart3,
+  Settings,
+  ImageIcon,
+  CreditCard,
+  Share2,
+  Menu,
+  Home,
+  Clock,
+  LinkIcon,
+  Brain,
+  Zap,
+  Plus,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { UserNav } from "@/components/user-nav"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "AI Command Center", href: "/dashboard/ai-command-center", icon: Brain },
   { name: "Calendar", href: "/dashboard/calendar", icon: Calendar },
   { name: "Queue", href: "/dashboard/queue", icon: Clock },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
@@ -57,6 +73,38 @@ export default function DashboardLayout({
                 )
               })}
             </nav>
+
+            {/* Create Content Dropdown */}
+            <div className="p-4 border-t">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="w-full gap-2">
+                    <Plus className="h-4 w-4" />
+                    Create Content
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link href="/create-post">
+                      <Share2 className="mr-2 h-4 w-4" />
+                      <span>Text Post</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/create-video-post">
+                      <ImageIcon className="mr-2 h-4 w-4" />
+                      <span>Video Post</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/ai-command-center">
+                      <Zap className="mr-2 h-4 w-4" />
+                      <span>AI Generated Content</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
@@ -85,6 +133,38 @@ export default function DashboardLayout({
               )
             })}
           </nav>
+
+          {/* Create Content Dropdown */}
+          <div className="p-4 border-t">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="w-full gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Content
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/create-post">
+                    <Share2 className="mr-2 h-4 w-4" />
+                    <span>Text Post</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/create-video-post">
+                    <ImageIcon className="mr-2 h-4 w-4" />
+                    <span>Video Post</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/ai-command-center">
+                    <Zap className="mr-2 h-4 w-4" />
+                    <span>AI Generated Content</span>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
